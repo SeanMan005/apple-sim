@@ -1,0 +1,1436 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="A live model of the apple cascade — set the season's fuel and the base unit count, then watch the stack climb the grade axis or stall partway up. Companion instrument to How an Apple Works.">
+<style>
+  /* standalone reset — the .src fragment is normally wrapped by the artifact
+     host, which supplies one. This standalone document supplies its own. */
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; }
+  h1, h2, h3, h4, p, figure, blockquote, ul, ol, dl, dd { margin: 0; }
+  ul, ol { padding: 0; list-style: none; }
+  img, svg, video, canvas { display: block; max-width: 100%; }
+  table { border-collapse: collapse; }
+</style>
+<title>The Apple Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..700,0..100,0..1&family=JetBrains+Mono:wght@400;500;700&family=Spectral:ital,wght@0,300;0,400;0,500;1,300&display=swap">
+
+<style>
+  /* ------------------------------------------------------------------
+     Companion instrument to the "How an Apple Works" plate.
+     Same grade ramp, different treatment: the plate is a document,
+     this is a bench. Mono carries the UI; Fraunces appears only where
+     the plate's own stage names appear.
+     ------------------------------------------------------------------ */
+  :root {
+    --bench:   #f3ece0;
+    --panel:   #faf6ef;
+    --well:    #ebe3d4;
+    --rule:    #ded2bd;
+    --rule-lit:#c7b9a0;
+
+    --ink:     #241f1b;
+    --prose:   #4a4139;
+    --dim:     #6b6157;
+    --faint:   #8d8175;
+
+    --g0: #5f7a89;  --g0-b: #8fa7b3;
+    --g1: #8a7a2a;  --g1-b: #c7b45e;
+    --g2: #b8681c;  --g2-b: #e08a3c;
+    --g3: #c13a24;  --g3-b: #d1452f;
+    --g4: #7d3018;  --g4-b: #7d3018;
+
+    --flow: #c25a2e;
+    --org:  #3f6d8c;
+    --leaf: #4f7a3d;
+    --warn: #b8681c;
+    --bad:  #a8342a;
+
+    --grid: rgba(60,42,24,.07);
+    --shadow: 0 1px 2px rgba(60,42,24,.06), 0 10px 34px rgba(60,42,24,.08);
+
+    --display: "Fraunces", Iowan Old Style, Georgia, serif;
+    --serif:   "Spectral", Iowan Old Style, Georgia, "Times New Roman", serif;
+    --mono:    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bench:   #12100c;
+      --panel:   #1a1610;
+      --well:    #221c14;
+      --rule:    #322a1f;
+      --rule-lit:#4a3d2d;
+
+      --ink:     #f4ede2;
+      --prose:   #cdc1b1;
+      --dim:     #a39684;
+      --faint:   #837565;
+
+      --g0: #9dbac9;  --g0-b: #7f99a6;
+      --g1: #d9c76f;  --g1-b: #b9a555;
+      --g2: #f0a05a;  --g2-b: #d47e33;
+      --g3: #ee7157;  --g3-b: #c63f2a;
+      --g4: #dd8459;  --g4-b: #8e3a1c;
+
+      --flow: #e07a4c;
+      --org:  #74a6c6;
+      --leaf: #86b26f;
+      --warn: #e0964a;
+      --bad:  #e2705e;
+
+      --grid: rgba(240,225,200,.06);
+      --shadow: 0 1px 2px rgba(0,0,0,.5), 0 14px 44px rgba(0,0,0,.45);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bench:   #12100c;
+    --panel:   #1a1610;
+    --well:    #221c14;
+    --rule:    #322a1f;
+    --rule-lit:#4a3d2d;
+
+    --ink:     #f4ede2;
+    --prose:   #cdc1b1;
+    --dim:     #a39684;
+    --faint:   #837565;
+
+    --g0: #9dbac9;  --g0-b: #7f99a6;
+    --g1: #d9c76f;  --g1-b: #b9a555;
+    --g2: #f0a05a;  --g2-b: #d47e33;
+    --g3: #ee7157;  --g3-b: #c63f2a;
+    --g4: #dd8459;  --g4-b: #8e3a1c;
+
+    --flow: #e07a4c;
+    --org:  #74a6c6;
+    --leaf: #86b26f;
+    --warn: #e0964a;
+    --bad:  #e2705e;
+
+    --grid: rgba(240,225,200,.06);
+    --shadow: 0 1px 2px rgba(0,0,0,.5), 0 14px 44px rgba(0,0,0,.45);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bench);
+    color: var(--prose);
+    font-family: var(--serif);
+    font-weight: 300;
+    font-size: 16px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 1440px; margin: 0 auto; padding: 0 clamp(16px, 3vw, 40px); }
+
+  :focus-visible { outline: 2px solid var(--flow); outline-offset: 3px; }
+
+  /* ---------------- masthead ---------------- */
+
+  header.top {
+    padding: clamp(34px, 5vw, 62px) 0 clamp(22px, 3vw, 34px);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 22px;
+  }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .3em;
+    text-transform: uppercase;
+    color: var(--faint);
+    margin: 0;
+  }
+  h1 {
+    font-family: var(--display);
+    font-variation-settings: "opsz" 120, "SOFT" 40, "WONK" 1;
+    font-weight: 600;
+    font-size: clamp(38px, 6.4vw, 74px);
+    line-height: .95;
+    letter-spacing: -.022em;
+    color: var(--ink);
+    margin: 16px 0 0;
+    text-wrap: balance;
+  }
+  .deck {
+    margin: 14px 0 0;
+    font-size: clamp(16px, 1.5vw, 19px);
+    line-height: 1.5;
+    color: var(--dim);
+    font-style: italic;
+    max-width: 46ch;
+  }
+  .backlink {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--dim);
+    text-decoration: none;
+    border-bottom: 1px solid var(--rule-lit);
+    padding-bottom: 3px;
+    white-space: nowrap;
+  }
+  .backlink:hover { color: var(--flow); border-color: var(--flow); }
+
+  /* ---------------- bench layout ---------------- */
+
+  .bench {
+    display: grid;
+    grid-template-columns: 286px minmax(0, 1fr) 320px;
+    gap: 2px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    border-radius: 3px 3px 0 0;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .pane { background: var(--panel); padding: clamp(16px, 1.6vw, 22px); min-width: 0; }
+  .pane.stage-pane { background: var(--well); padding: 18px 16px 16px; }
+
+  @media (max-width: 1180px) {
+    .bench { grid-template-columns: 1fr 1fr; }
+    .pane.stage-pane { grid-column: 1 / -1; order: -1; }
+  }
+  @media (max-width: 720px) {
+    .bench { grid-template-columns: 1fr; }
+  }
+
+  .pane h2 {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: .26em;
+    text-transform: uppercase;
+    color: var(--ink);
+    margin: 0 0 4px;
+  }
+  .pane .sub {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--faint);
+    margin: 0 0 18px;
+  }
+
+  /* ---------------- controls ---------------- */
+
+  .presets { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 20px; }
+  .presets button {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    padding: 9px 6px;
+    background: var(--well);
+    color: var(--dim);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    cursor: pointer;
+    line-height: 1.35;
+    transition: background .18s, color .18s, border-color .18s;
+  }
+  .presets button:hover { color: var(--ink); border-color: var(--rule-lit); }
+  .presets button[aria-pressed="true"] {
+    background: var(--ink); border-color: var(--ink); color: var(--panel);
+    box-shadow: inset 3px 0 0 var(--flow);
+  }
+
+  .ctl { margin-bottom: 17px; }
+  .ctl .lab {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+    font-family: var(--mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--dim); margin-bottom: 7px;
+  }
+  .ctl .lab b { color: var(--ink); font-weight: 500; font-variant-numeric: tabular-nums; letter-spacing: .06em; }
+  .ctl .hint { font-family: var(--serif); font-style: italic; font-size: 12.5px; color: var(--faint); line-height: 1.45; margin-top: 6px; letter-spacing: 0; text-transform: none; }
+
+  input[type=range] {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 20px; background: transparent; cursor: pointer; display: block; margin: 0;
+  }
+  input[type=range]::-webkit-slider-runnable-track { height: 3px; background: var(--rule); border-radius: 2px; }
+  input[type=range]::-moz-range-track { height: 3px; background: var(--rule); border-radius: 2px; }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 15px; height: 15px; border-radius: 50%;
+    background: var(--panel); border: 3px solid var(--flow); margin-top: -6px;
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 15px; height: 15px; border-radius: 50%; border: 3px solid var(--flow); background: var(--panel);
+  }
+
+  .transport { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--rule); }
+  .transport button, .wide-btn {
+    font-family: var(--mono); font-size: 10px; letter-spacing: .16em; text-transform: uppercase;
+    padding: 11px 8px; border-radius: 2px; cursor: pointer; border: 1px solid var(--rule);
+    background: var(--well); color: var(--ink); transition: background .18s, color .18s, border-color .18s;
+  }
+  .transport button:hover, .wide-btn:hover { border-color: var(--rule-lit); }
+  .transport button.primary { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+  .transport button.primary:hover { border-color: var(--flow); box-shadow: inset 3px 0 0 var(--flow); }
+  .wide-btn { grid-column: 1 / -1; width: 100%; margin-top: 4px; text-align: left; }
+  .wide-btn.danger { color: var(--bad); }
+  .wide-btn.danger:hover { background: var(--bad); color: var(--panel); border-color: var(--bad); }
+  .wide-btn.danger:hover .cost { color: var(--panel); }
+  .wide-btn:disabled { opacity: .4; cursor: not-allowed; }
+  .wide-btn .cost { float: right; font-variant-numeric: tabular-nums; letter-spacing: .04em; color: var(--faint); }
+
+  .speeds { display: flex; gap: 3px; grid-column: 1 / -1; }
+  .speeds button { flex: 1; padding: 11px 0; }
+  .speeds button[aria-pressed="true"] { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+
+  /* ---------------- the stack ---------------- */
+
+  .clock {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 14px;
+    font-family: var(--mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--faint); margin-bottom: 10px;
+  }
+  .clock .day { color: var(--ink); font-size: 13px; letter-spacing: .1em; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .clock .phase { color: var(--flow); text-align: right; }
+  .clock-track { height: 3px; background: var(--rule); border-radius: 2px; overflow: hidden; margin-bottom: 16px; }
+  .clock-fill { height: 100%; width: 0; background: var(--flow); }
+
+  .stackwrap { position: relative; }
+  #particles { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3; }
+
+  .grade-row { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 12px; }
+  .axis {
+    border-radius: 2px;
+    background: linear-gradient(to top, #8fa7b3, #c7b45e 26%, #e08a3c 52%, #d1452f 76%, #7d3018);
+    position: relative;
+  }
+  .axis span {
+    position: absolute; left: 50%; transform: translateX(-50%) rotate(180deg);
+    writing-mode: vertical-rl; font-family: var(--mono); font-size: 8.5px;
+    letter-spacing: .24em; text-transform: uppercase; color: rgba(255,255,255,.92);
+  }
+  .axis span.hi { top: 9px; }
+  .axis span.lo { bottom: 9px; }
+
+  .stages { display: flex; flex-direction: column-reverse; }
+
+  .stg {
+    position: relative;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--c);
+    border-radius: 2px;
+    padding: 11px 13px 12px;
+    overflow: hidden;
+    transition: opacity .3s;
+  }
+  .stg .fill {
+    position: absolute; top: 0; bottom: 0; left: 0; width: 0;
+    background: var(--cb); opacity: .17;
+  }
+  .stg .top { position: relative; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .stg .nm {
+    font-family: var(--display);
+    font-variation-settings: "opsz" 40, "SOFT" 20, "WONK" 0;
+    font-weight: 600; font-size: 19px; line-height: 1.1; color: var(--c); letter-spacing: -.005em;
+  }
+  .stg .val { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .stg .gl { position: relative; font-family: var(--mono); font-size: 9.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--faint); margin-top: 5px; }
+  .stg[data-live="0"] { opacity: .5; }
+  .stg .grade-tag { color: var(--c); opacity: .85; }
+
+  .conv {
+    position: relative;
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 13px 8px 16px;
+    font-family: var(--mono); font-size: 9.5px; letter-spacing: .08em; color: var(--faint);
+    text-transform: uppercase; line-height: 1.4;
+    transition: opacity .3s;
+  }
+  .conv .arw { color: var(--flow); font-size: 11px; }
+  .conv .rate { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--dim); white-space: nowrap; }
+  .conv[data-flowing="0"] { opacity: .35; }
+
+  .base {
+    position: relative;
+    border: 1px solid var(--rule);
+    border-top: none;
+    border-radius: 0 0 2px 2px;
+    background: var(--panel);
+    padding: 9px 13px 11px;
+  }
+  #basefield { display: block; width: 100%; height: 34px; }
+  .base .cap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; font-family: var(--mono); font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); margin-top: 6px; }
+  .base .cap b { color: var(--leaf); font-weight: 500; font-variant-numeric: tabular-nums; }
+
+  .railnote {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 2px; margin-top: 14px;
+    font-family: var(--mono); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; line-height: 1.6;
+  }
+  .railnote div { background: var(--panel); padding: 10px 12px; color: var(--faint); border-top: 2px solid var(--rule); }
+  .railnote div:first-child { border-top-color: var(--flow); }
+  .railnote div:last-child { border-top-color: var(--org); }
+  .railnote b { display: block; color: var(--ink); font-weight: 500; margin-bottom: 3px; }
+  .railnote i { font-family: var(--serif); font-style: italic; font-size: 12px; letter-spacing: 0; text-transform: none; color: var(--dim); }
+  @media (max-width: 560px) { .railnote { grid-template-columns: 1fr; } }
+
+  /* ---------------- telemetry ---------------- */
+
+  .ceiling {
+    background: var(--well); border-radius: 2px; padding: 13px 14px 14px; margin-bottom: 16px;
+    border-left: 3px solid var(--c);
+  }
+  .ceiling .k { font-family: var(--mono); font-size: 9px; letter-spacing: .22em; text-transform: uppercase; color: var(--faint); }
+  .ceiling .v { font-family: var(--display); font-variation-settings: "opsz" 40, "SOFT" 20; font-weight: 600; font-size: 20px; color: var(--c); line-height: 1.15; margin-top: 5px; }
+  .ceiling .why { font-family: var(--serif); font-style: italic; font-size: 12.5px; line-height: 1.45; color: var(--dim); margin-top: 7px; }
+
+  .readouts { display: grid; gap: 1px; background: var(--rule); border-radius: 2px; overflow: hidden; margin-bottom: 16px; }
+  .ro { background: var(--panel); display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: baseline; padding: 8px 12px; }
+  .ro .k { font-family: var(--mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+  .ro .v { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .ro .v.warn { color: var(--warn); }
+  .ro .v.bad  { color: var(--bad); }
+  .ro .v.ok   { color: var(--leaf); }
+
+  .spark { margin-bottom: 16px; }
+  .spark canvas { display: block; width: 100%; height: 84px; background: var(--well); border-radius: 2px; }
+  .spark .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; font-family: var(--mono); font-size: 8.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
+  .spark .legend i { display: inline-block; width: 12px; height: 2px; background: var(--c); vertical-align: middle; margin-right: 5px; }
+
+  .verdict {
+    border: 1px solid var(--rule); border-left: 3px solid var(--c);
+    border-radius: 2px; padding: 14px; background: var(--well);
+  }
+  .verdict .k { font-family: var(--mono); font-size: 9px; letter-spacing: .22em; text-transform: uppercase; color: var(--faint); }
+  .verdict .v { font-family: var(--display); font-variation-settings: "opsz" 40, "SOFT" 20; font-weight: 600; font-size: 20px; line-height: 1.15; color: var(--c); margin-top: 5px; }
+  .verdict p { font-family: var(--serif); font-size: 13.5px; line-height: 1.5; color: var(--dim); margin: 8px 0 0; }
+
+  .log { margin-top: 16px; max-height: 168px; overflow-y: auto; display: flex; flex-direction: column-reverse; }
+  .log .e { display: grid; grid-template-columns: 44px 1fr; gap: 8px; padding: 5px 0; border-top: 1px solid var(--rule); font-family: var(--mono); font-size: 10px; line-height: 1.5; color: var(--dim); }
+  .log .e .d { color: var(--faint); font-variant-numeric: tabular-nums; }
+  .log .e.hi { color: var(--flow); }
+  .log .e.bad { color: var(--bad); }
+
+  /* ---------------- ledger + ground ---------------- */
+
+  .lower { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.3fr); gap: 2px; background: var(--rule); border: 1px solid var(--rule); border-top: none; border-radius: 0 0 3px 3px; overflow: hidden; box-shadow: var(--shadow); }
+  @media (max-width: 900px) { .lower { grid-template-columns: 1fr; } }
+
+  .ledger { display: grid; gap: 1px; background: var(--rule); border-radius: 2px; overflow: hidden; }
+  .li { background: var(--panel); display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: baseline; padding: 10px 12px; }
+  .li .n { font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink); }
+  .li .q { font-family: var(--mono); font-size: 11px; color: var(--dim); font-variant-numeric: tabular-nums; }
+  .li .f { font-family: var(--mono); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; padding: 2px 7px; border-radius: 2px; white-space: nowrap; }
+  .li .f.gone { color: var(--faint); border: 1px solid var(--rule); }
+  .li .f.kept { color: #fff; background: var(--g4-b); border: 1px solid var(--g4-b); }
+
+  #ground { display: block; width: 100%; height: 250px; background: var(--well); border-radius: 2px; }
+  .gstats { display: flex; flex-wrap: wrap; gap: 4px 26px; margin-top: 12px; font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); }
+  .gstats b { color: var(--ink); font-weight: 500; font-variant-numeric: tabular-nums; }
+
+  /* ---------------- notes ---------------- */
+
+  .notes { padding: clamp(40px, 6vw, 76px) 0 clamp(48px, 7vw, 90px); }
+  .notes h2 {
+    font-family: var(--display); font-variation-settings: "opsz" 60, "SOFT" 30, "WONK" 1;
+    font-weight: 500; font-size: clamp(24px, 3vw, 33px); line-height: 1.14; color: var(--ink);
+    margin: 14px 0 0; max-width: 26ch; letter-spacing: -.01em; text-wrap: balance;
+  }
+  .rules { margin-top: clamp(28px, 4vw, 44px); display: grid; grid-template-columns: repeat(auto-fit, minmax(268px, 1fr)); gap: 2px; background: var(--rule); border: 1px solid var(--rule); border-radius: 3px; overflow: hidden; }
+  .rule-card { background: var(--panel); padding: clamp(18px, 2vw, 26px); }
+  .rule-card h3 { font-family: var(--mono); font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--c); margin: 0; line-height: 1.5; }
+  .rule-card p { margin: 11px 0 0; font-size: 15px; line-height: 1.6; color: var(--prose); }
+  .rule-card code { font-family: var(--mono); font-size: 12px; color: var(--ink); background: var(--well); padding: 1px 5px; border-radius: 2px; }
+  .rule-card .try { display: block; margin-top: 12px; font-family: var(--mono); font-size: 10px; letter-spacing: .09em; text-transform: uppercase; color: var(--faint); line-height: 1.6; }
+
+  footer.colophon {
+    border-top: 1px solid var(--rule); padding: 26px 0 60px;
+    font-family: var(--mono); font-size: 10px; letter-spacing: .1em; line-height: 1.9;
+    color: var(--faint); display: flex; flex-wrap: wrap; gap: 4px 30px;
+  }
+  footer.colophon b { color: var(--dim); font-weight: 500; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <p class="eyebrow">Companion instrument &middot; live model</p>
+      <h1>The Apple Engine</h1>
+      <p class="deck">The plate, running. Set the fuel and the base, then watch the cascade climb the grade axis &mdash; or stall partway up.</p>
+    </div>
+    <a class="backlink" href="https://claude.ai/code/artifact/66cdb79b-71b6-4de5-9f01-773129288a62">&larr; How an Apple Works</a>
+  </header>
+
+  <div class="bench">
+
+    <!-- ============ CONTROLS ============ -->
+    <div class="pane">
+      <h2>Inputs</h2>
+      <p class="sub">Same machine every run. Only the fuel and the base change.</p>
+
+      <div class="presets" id="presets">
+        <button data-p="rich" aria-pressed="true">Rich season</button>
+        <button data-p="thin" aria-pressed="false">Thin season</button>
+        <button data-p="wide" aria-pressed="false">Wide dull base</button>
+        <button data-p="free" aria-pressed="false">Free-form base</button>
+        <button data-p="greedy" aria-pressed="false">All-in on flesh</button>
+        <button data-p="hoard" aria-pressed="false">Hoard the sugar</button>
+      </div>
+
+      <div class="ctl">
+        <div class="lab"><span>Sunlight</span><b id="v-light">0.88</b></div>
+        <input type="range" id="c-light" min="0.05" max="1" step="0.01" value="0.88" aria-label="Sunlight">
+        <div class="hint">Grade 0. Free, constant, and useless until something intercepts it.</div>
+      </div>
+
+      <div class="ctl">
+        <div class="lab"><span>Water</span><b id="v-water">0.80</b></div>
+        <input type="range" id="c-water" min="0.05" max="1" step="0.01" value="0.80" aria-label="Water">
+      </div>
+
+      <div class="ctl">
+        <div class="lab"><span>Base breadth</span><b id="v-leaves">200 units</b></div>
+        <input type="range" id="c-leaves" min="20" max="520" step="5" value="200" aria-label="Base breadth">
+        <div class="hint">Leaves and roots. More surface catches more &mdash; and charges upkeep every day it exists.</div>
+      </div>
+
+      <div class="ctl">
+        <div class="lab"><span>Base discipline</span><b id="v-disc">0.85</b></div>
+        <input type="range" id="c-disc" min="0" max="1" step="0.01" value="0.85" aria-label="Base discipline">
+        <div class="hint">High: every unit does one predictable job. Low: the base improvises, and supply arrives jittery and off-aim.</div>
+      </div>
+
+      <div class="ctl">
+        <div class="lab"><span>Routed to fruit</span><b id="v-alloc">0.45</b></div>
+        <input type="range" id="c-alloc" min="0" max="1" step="0.01" value="0.45" aria-label="Share of surplus routed to fruit">
+        <div class="hint">Allocation, not production. What is not routed stays as working reserve.</div>
+      </div>
+
+      <div class="ctl">
+        <div class="lab"><span>Forager traffic</span><b id="v-traffic">1.00</b></div>
+        <input type="range" id="c-traffic" min="0" max="2.5" step="0.05" value="1" aria-label="Forager traffic">
+      </div>
+
+      <div class="transport">
+        <button id="b-run" class="primary">Pause</button>
+        <button id="b-reset">Restart</button>
+        <div class="speeds">
+          <button data-s="1" aria-pressed="true">1&times;</button>
+          <button data-s="3" aria-pressed="false">3&times;</button>
+          <button data-s="8" aria-pressed="false">8&times;</button>
+        </div>
+        <button class="wide-btn" id="b-drought">Send a drought <span class="cost">cuts water 55%</span></button>
+        <button class="wide-btn danger" id="b-drop">Drop the fruit <span class="cost" id="sunk">0.0 sunk</span></button>
+      </div>
+    </div>
+
+    <!-- ============ THE STACK ============ -->
+    <div class="pane stage-pane">
+      <div class="clock">
+        <span>Season</span>
+        <span class="day"><span id="day">0</span> / 180 d</span>
+        <span class="phase" id="phase">leaf &middot; banking sugar</span>
+      </div>
+      <div class="clock-track"><div class="clock-fill" id="clockfill"></div></div>
+
+      <div class="stackwrap">
+        <canvas id="particles" aria-hidden="true"></canvas>
+        <div class="grade-row">
+          <div class="axis" aria-hidden="true"><span class="hi">high</span><span class="lo">low</span></div>
+          <div>
+            <div class="stages">
+
+              <div class="stg" id="stg0" data-live="1" style="--c:var(--g0);--cb:var(--g0-b)">
+                <div class="fill" id="fill0"></div>
+                <div class="top"><span class="nm">Sunlight, water, air</span><span class="val" id="val0">0.00 /d</span></div>
+                <div class="gl"><span class="grade-tag">G0</span> &middot; interception, not supply</div>
+              </div>
+              <div class="conv" id="cv0" data-flowing="0">
+                <span class="arw">&#9650;</span><span>Photosynthesis &middot; leaf</span><span class="rate" id="r0">0.00</span>
+              </div>
+
+              <div class="stg" id="stg1" data-live="1" style="--c:var(--g1);--cb:var(--g1-b)">
+                <div class="fill" id="fill1"></div>
+                <div class="top"><span class="nm">Sugar</span><span class="val" id="val1">0.0 u</span></div>
+                <div class="gl"><span class="grade-tag">G1</span> &middot; working currency, spent as it sits</div>
+              </div>
+              <div class="conv" id="cv1" data-flowing="0">
+                <span class="arw">&#9650;</span><span>Phloem &middot; routed to fruit</span><span class="rate" id="r1">0.00</span>
+              </div>
+
+              <div class="stg" id="stg2" data-live="0" style="--c:var(--g2);--cb:var(--g2-b)">
+                <div class="fill" id="fill2"></div>
+                <div class="top"><span class="nm">Fruit flesh</span><span class="val" id="val2">0.00 g</span></div>
+                <div class="gl"><span class="grade-tag">G2</span> &middot; <span id="gl2">not yet set</span></div>
+              </div>
+              <div class="conv" id="cv2" data-flowing="0">
+                <span class="arw">&#9650;</span><span>Ripening cascade</span><span class="rate" id="r2">locked</span>
+              </div>
+
+              <div class="stg" id="stg3" data-live="0" style="--c:var(--g3);--cb:var(--g3-b)">
+                <div class="fill" id="fill3"></div>
+                <div class="top"><span class="nm">The ripe apple</span><span class="val" id="val3">0%</span></div>
+                <div class="gl"><span class="grade-tag">G3</span> &middot; <span id="gl3">green &middot; hard &middot; sour &middot; unpayable</span></div>
+              </div>
+              <div class="conv" id="cv3" data-flowing="0">
+                <span class="arw">&#9650;</span><span>Seed maturation &middot; runs inward</span><span class="rate" id="r3">0.00</span>
+              </div>
+
+              <div class="stg" id="stg4" data-live="0" style="--c:var(--g4);--cb:var(--g4-b)">
+                <div class="fill" id="fill4"></div>
+                <div class="top"><span class="nm">The seed</span><span class="val" id="val4">0%</span></div>
+                <div class="gl"><span class="grade-tag">G4</span> &middot; apex &middot; the only output that keeps</div>
+              </div>
+
+            </div>
+
+            <div class="base">
+              <canvas id="basefield" aria-hidden="true"></canvas>
+              <div class="cap">
+                <span>Constrained base &middot; <b id="basecount">200</b> units, one job each</span>
+                <span>supply stability <b id="stab">1.00</b></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="railnote">
+        <div><b>&#9650; Built bottom-up</b><i>Cost to abandon rises every day the stack climbs.</i></div>
+        <div><b>&#9660; Organised top-down</b><i>Every layer below is answering the seed's question.</i></div>
+      </div>
+    </div>
+
+    <!-- ============ TELEMETRY ============ -->
+    <div class="pane">
+      <h2>Telemetry</h2>
+      <p class="sub">What this fuel will actually let the run finish.</p>
+
+      <div class="ceiling" id="ceil" style="--c:var(--g0)">
+        <div class="k">Fuel ceiling &middot; projected</div>
+        <div class="v" id="ceil-v">Grade 0</div>
+        <div class="why" id="ceil-why">Not started.</div>
+      </div>
+
+      <div class="readouts">
+        <div class="ro"><span class="k">Gross interception</span><span class="v" id="t-gross">0.00 /d</span></div>
+        <div class="ro"><span class="k">Self-shading loss</span><span class="v" id="t-shade">0%</span></div>
+        <div class="ro"><span class="k">Base upkeep</span><span class="v" id="t-upkeep">0.00 /d</span></div>
+        <div class="ro"><span class="k">Surplus</span><span class="v" id="t-surplus">0.00 /d</span></div>
+        <div class="ro"><span class="k">Reserve stress</span><span class="v" id="t-stress">0%</span></div>
+        <div class="ro"><span class="k">Sweetness</span><span class="v" id="t-brix">&mdash;</span></div>
+        <div class="ro"><span class="k">Acid</span><span class="v" id="t-acid">&mdash;</span></div>
+        <div class="ro"><span class="k">Firmness</span><span class="v" id="t-firm">&mdash;</span></div>
+        <div class="ro"><span class="k">Dispersal signal</span><span class="v" id="t-signal">0%</span></div>
+      </div>
+
+      <div class="spark">
+        <canvas id="spark" aria-hidden="true"></canvas>
+        <div class="legend">
+          <span style="--c:var(--flow)"><i></i>Surplus</span>
+          <span style="--c:var(--g3-b)"><i></i>Ripeness</span>
+          <span style="--c:var(--g4-b)"><i></i>Seed</span>
+        </div>
+      </div>
+
+      <div class="verdict" id="verdict" style="--c:var(--g0)">
+        <div class="k">Outcome</div>
+        <div class="v" id="verdict-v">Season running</div>
+        <p id="verdict-p">Nothing is decided yet. The stack builds in order, and nothing in it can be skipped.</p>
+      </div>
+
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+
+  <!-- ============ LEDGER + GROUND ============ -->
+  <div class="lower">
+    <div class="pane">
+      <h2>End-of-season ledger</h2>
+      <p class="sub">Nearly every product of this engine has a short shelf life by design.</p>
+      <div class="ledger" id="ledger"></div>
+    </div>
+    <div class="pane">
+      <h2>Compounding ground</h2>
+      <p class="sub">A cycle returns to where it started. This hands the whole accumulated result to a new instance and lets that instance begin from there.</p>
+      <canvas id="ground" aria-hidden="true"></canvas>
+      <div class="gstats">
+        <span>Engines running <b id="g-count">1</b></span>
+        <span>Seasons ahead <b id="g-seasons">0</b></span>
+        <span>Generations <b id="g-gen">0</b></span>
+        <span>If it were a cycle <b>1</b></span>
+      </div>
+    </div>
+  </div>
+
+  <section class="notes">
+    <p class="eyebrow">What the model enforces</p>
+    <h2>Seven rules, and every one of them can be made to bite</h2>
+    <div class="rules">
+      <div class="rule-card" style="--c:var(--g0)">
+        <h3>Interception, not input</h3>
+        <p>Sunlight is not the scarce thing. <code>gross = base &times; light &times; water &times; aim</code>. Leave the light at full and take the base down to 20 units: the photons keep arriving in exactly the same quantity, and the stack still dies at grade 2.</p>
+        <span class="try">Try: base breadth &rarr; 20, sunlight &rarr; 1.00</span>
+      </div>
+      <div class="rule-card" style="--c:var(--g1)">
+        <h3>The base is not free</h3>
+        <p>Leaves shade each other, so capture saturates while upkeep keeps climbing in a straight line. Past roughly 260 units a wider base makes <em>less</em> surplus, not more &mdash; and every extra unit past that pushes the harvest later into the season.</p>
+        <span class="try">Try: base breadth 260, then 520 &mdash; watch surplus</span>
+      </div>
+      <div class="rule-card" style="--c:var(--g2)">
+        <h3>Freedom at the bottom destroys aim at the top</h3>
+        <p>Discipline sets both the share of the base pointed at the job and the variance of what arrives. Stability multiplies every conversion above grade 1: a jittery supply cannot be refined, only burned.</p>
+        <span class="try">Try: free-form base</span>
+      </div>
+      <div class="rule-card" style="--c:var(--g3)">
+        <h3>Fuel sets the ceiling</h3>
+        <p>The converters never change. On thin input the same stack runs in the same order and halts partway up. Sourness here is not a defect &mdash; it is an unfinished ripening cascade, and it looks identical to a broken machine.</p>
+        <span class="try">Try: thin season, or a drought at day 90</span>
+      </div>
+      <div class="rule-card" style="--c:var(--g3)">
+        <h3>The bribe is unpayable early</h3>
+        <p>Ripening is gated on a finished seed, and the dispersal signal goes as ripeness to the fourth power. Half-ripe is not half an offer &mdash; it is six per cent of one, so foragers pass the fruit by until the payload is done.</p>
+        <span class="try">Watch the signal readout as the seed crosses 100%</span>
+      </div>
+      <div class="rule-card" style="--c:var(--g4)">
+        <h3>Abandonment gets expensive</h3>
+        <p>Drop the fruit on day 30 and you lose almost nothing. Drop it on day 150 and the sunk figure is a whole season of refinement. The tree runs this same calculation, and abscises under reserve stress.</p>
+        <span class="try">Try: all-in on flesh, and watch it drop the fruit itself</span>
+      </div>
+      <div class="rule-card" style="--c:var(--g4)">
+        <h3>One output does not decay</h3>
+        <p>The ledger settles every season: leaves fall, sugar is spent, flesh rots. One line survives, and it starts an identical engine on ground the parent could never occupy.</p>
+        <span class="try">Watch the ground map after a successful dispersal</span>
+      </div>
+    </div>
+  </section>
+
+  <footer class="colophon">
+    <span><b>Model</b> discrete-step, 180-day season</span>
+    <span><b>Companion to</b> How an Apple Works</span>
+    <span><b>Palette</b> orchard grade ramp, low &rarr; high</span>
+    <span><b>Type</b> Fraunces &middot; Spectral &middot; JetBrains Mono</span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function $(id) { return document.getElementById(id); }
+  function clamp(x, a, b) { return x < a ? a : (x > b ? b : x); }
+
+  /* ============================================================
+     MODEL
+     ============================================================ */
+  var SEASON  = 180;   // days in a season
+  var SET_DAY = 40;    // fruit set
+
+  var P = {
+    leafGain:   0.036,  // capture per effective base unit per day, at full light and water
+    nHalf:      240,    // self-shading: effective units = N / (1 + N/nHalf)
+    upkeepUnit: 0.0045, // upkeep per base unit per day
+    structural: 0.12,   // trunk and root maintenance
+    startSugar: 2.50,   // overwintered reserve
+    spend:      0.060,  // sugar decay: a working currency, not a store of value
+    cvK:        1.6,    // how hard supply variance punishes conversion
+    fleshEff:   0.115,  // routed surplus -> flesh mass
+    fleshMax:   4.00,
+    seedNeed:   0.50,   // flesh at which seed fill can begin
+    seedFull:   1.50,   // flesh at which seed fills at full rate
+    seedRate:   0.026,
+    ripenRate:  0.055,
+    forage:     0.130,
+    signalExp:  4.0,    // how sharply the bribe is withheld before ripeness
+    demandDays: 10,     // the fruit's forward claim on the reserve
+    coverRef:   1.5,
+    solvDays:   4       // days of upkeep the pool should cover
+  };
+
+  var PRESETS = {
+    rich:   { light: 0.88, water: 0.80, leaves: 200, disc: 0.85, alloc: 0.45, traffic: 1.0 },
+    thin:   { light: 0.49, water: 0.42, leaves: 160, disc: 0.80, alloc: 0.45, traffic: 1.0 },
+    wide:   { light: 0.72, water: 0.60, leaves: 260, disc: 0.95, alloc: 0.45, traffic: 1.0 },
+    free:   { light: 0.72, water: 0.60, leaves: 180, disc: 0.10, alloc: 0.45, traffic: 1.0 },
+    greedy: { light: 0.72, water: 0.60, leaves: 180, disc: 0.80, alloc: 0.96, traffic: 1.0 },
+    hoard:  { light: 0.72, water: 0.60, leaves: 180, disc: 0.80, alloc: 0.07, traffic: 1.0 }
+  };
+
+  var ctl = { light: 0.88, water: 0.80, leaves: 200, disc: 0.85, alloc: 0.45, traffic: 1.0 };
+  var speed = 1, running = true;
+  var S;
+
+  function fresh() {
+    return {
+      day: 0, sugar: P.startSugar, flesh: 0, seed: 0, ripe: 0, signal: 0,
+      gross: 0, grossMean: 0, upkeep: 0, surplus: 0, shade: 0,
+      stability: 1, stress: 0, strain: 0,
+      flux: [0, 0, 0, 0],
+      sunk: 0, dropped: false, dispersed: false, ended: false, outcome: null,
+      win: [], hist: [], log: [], seedQuality: 0,
+      sites: [{ x: 0, y: 0, gen: 0, q: 1, age: 1 }],
+      projSeasons: 0, projecting: false, projClock: 0,
+      spent: 0
+    };
+  }
+
+  var spare = null;
+  function gauss() {
+    if (spare !== null) { var g = spare; spare = null; return g; }
+    var u = 0, v = 0, s = 0;
+    do { u = Math.random() * 2 - 1; v = Math.random() * 2 - 1; s = u * u + v * v; }
+    while (s === 0 || s >= 1);
+    var m = Math.sqrt(-2 * Math.log(s) / s);
+    spare = v * m;
+    return u * m;
+  }
+
+  function note(txt, kind) {
+    S.log.push({ d: Math.round(S.day), t: txt, k: kind || "" });
+    if (S.log.length > 40) S.log.shift();
+    logDirty = true;
+  }
+
+  function effUnits(n) { return n / (1 + n / P.nHalf); }
+
+  function step(dt) {
+    if (S.ended) return;
+
+    var L = ctl.light, W = ctl.water, N = ctl.leaves, D = ctl.disc, A = ctl.alloc;
+
+    // --- interception. aim and reliability are both bought with discipline.
+    var aim = 0.55 + 0.45 * D;
+    var jitter = clamp(1 + gauss() * (1 - D) * 0.60, 0.05, 2.2);
+    var ne = effUnits(N);
+    S.shade = 1 - ne / N;
+    var perUnit = P.leafGain * L * (0.45 + 0.55 * W);
+    S.gross = ne * perUnit * jitter * aim;
+
+    // supply stability: the variance of what arrives, not just its mean
+    S.win.push(S.gross);
+    if (S.win.length > 70) S.win.shift();
+    var i, mean = 0;
+    for (i = 0; i < S.win.length; i++) mean += S.win[i];
+    mean /= S.win.length;
+    var vs = 0;
+    for (i = 0; i < S.win.length; i++) vs += (S.win[i] - mean) * (S.win[i] - mean);
+    var cv = mean > 1e-6 ? Math.sqrt(vs / S.win.length) / mean : 0;
+    S.stability = 1 / (1 + P.cvK * cv);
+    S.grossMean = mean;
+
+    // --- the base charges rent whether or not it earns.
+    //     conversions run on the smoothed supply; the jitter's only channel
+    //     into the stack is stability, which is exactly the claim being made.
+    S.upkeep = N * P.upkeepUnit + P.structural;
+    S.surplus = S.grossMean - S.upkeep;
+
+    // --- converter 1: the only step that pulls energy in from outside
+    S.flux[0] = Math.max(0, S.gross);
+
+    // --- converter 2: allocation, not production
+    var toFruit = 0;
+    if (S.day >= SET_DAY && !S.dropped && S.surplus > 0) toFruit = A * S.surplus;
+    S.flux[1] = toFruit;
+
+    // --- reserve stress. two distinct failures, kept separate:
+    //     over-commitment (a decision) can abscise; thin fuel (a ceiling) only degrades.
+    var cover = S.sugar / Math.max(0.02, toFruit * P.demandDays);
+    var demandStress = toFruit > 0 ? clamp(1 - cover / P.coverRef, 0, 1) : 0;
+    var solvency = S.sugar / Math.max(0.02, S.upkeep * P.solvDays);
+    var solvStress = clamp(1 - solvency, 0, 1) * 0.75;
+    S.stress = Math.max(demandStress, solvStress);
+    var eff = S.stability * (1 - 0.55 * S.stress);
+
+    if (toFruit > 0) {
+      var add = toFruit * P.fleshEff * eff * dt;
+      if (S.flesh + add > P.fleshMax) add = Math.max(0, P.fleshMax - S.flesh);
+      S.flesh += add;
+      S.sunk += toFruit * dt;
+    }
+
+    // --- the sugar pool: income, minus what was routed away, minus steady spend
+    S.sugar += (S.surplus - toFruit) * dt;
+    var decay = Math.max(0, S.sugar) * P.spend * dt;
+    S.sugar -= decay;
+    S.spent += decay;
+    if (S.sugar < 0) S.sugar = 0;
+
+    // --- converter 4: flesh -> seed. the last conversion runs inward.
+    var seedRate = 0;
+    if (S.flesh > P.seedNeed && !S.dropped && S.seed < 1) {
+      var f = clamp((S.flesh - P.seedNeed) / (P.seedFull - P.seedNeed), 0, 1);
+      seedRate = P.seedRate * f * eff;
+      S.seed = Math.min(1, S.seed + seedRate * dt);
+      if (S.seed >= 1) note("seed complete — ripening unlocked", "hi");
+    }
+    S.flux[3] = seedRate;
+
+    // --- converter 3: the ripening cascade, gated on a finished payload
+    var ripeRate = 0;
+    if (S.seed >= 0.999 && !S.dropped && S.ripe < 1 && S.surplus > 0.02) {
+      ripeRate = P.ripenRate * clamp(S.surplus / 1.2, 0, 1.3) * eff;
+      S.ripe = Math.min(1, S.ripe + ripeRate * dt);
+    }
+    S.flux[2] = ripeRate;
+
+    // --- abscission: the tree runs the abandonment calculation too
+    if (!S.dropped && !S.dispersed) {
+      if (S.stress > 0.75 && S.ripe < 0.60) {
+        S.strain += (S.stress - 0.75) * dt;
+        if (S.strain > 2.5) {
+          S.dropped = true;
+          note("fruit abscised — reserve could not carry it", "bad");
+          finish("abscised");
+          return;
+        }
+      } else {
+        S.strain = Math.max(0, S.strain - 0.4 * dt);
+      }
+    }
+
+    // --- the dispersal trade
+    S.signal = Math.pow(S.ripe, P.signalExp) * clamp(S.flesh / 2.0, 0, 1);
+    if (!S.dispersed && !S.dropped && S.signal > 0.001) {
+      if (Math.random() < P.forage * ctl.traffic * S.signal * dt) {
+        S.dispersed = true;
+        S.seedQuality = clamp(0.35 + 0.45 * S.ripe + 0.30 * clamp(S.flesh / 3.0, 0, 1), 0, 1.1);
+        note("apple taken — seed carried out", "hi");
+        plantChild();
+        finish("dispersed");
+        return;
+      }
+    }
+
+    S.hist.push([S.day, S.surplus, S.ripe, S.seed]);
+    if (S.hist.length > 1200) S.hist.shift();
+
+    S.day += dt;
+    if (S.day >= SEASON) {
+      S.day = SEASON;
+      finish(S.ripe > 0.85 ? "ripe-unclaimed" : "stalled");
+    }
+  }
+
+  function plantChild() {
+    var a = Math.random() * Math.PI * 2;
+    var d = 48 + Math.random() * 120;
+    S.sites.push({ x: Math.cos(a) * d, y: Math.sin(a) * d * 0.62, gen: 1, q: 0.55 + Math.random() * 0.45, age: 0 });
+  }
+
+  /* ---------- outcome ---------- */
+  var VERDICTS = {
+    dispersed: { t: "Dispersed", g: 4,
+      p: "Every conversion ran to completion, the bribe was paid at the instant the payload was finished, and the one non-decaying output left the parent's shade." },
+    "ripe-unclaimed": { t: "Ripe, unclaimed", g: 3,
+      p: "The engine finished the payload and paid for a transport service that never arrived. The seed drops into the parent's own shade — close to a wasted season." },
+    stalled: { t: "Small, sour, early-stopped", g: 2,
+      p: "The stack ran in the same order and halted partway up. Sourness is not a defect here; it is an unfinished ripening cascade, and it looks identical to a broken machine." },
+    abscised: { t: "Fruit dropped", g: 1,
+      p: "The reserve could not cover what the fruit was drawing. The tree abandoned the expensive layer to keep the cheap ones alive." },
+    manual: { t: "Abandoned by hand", g: 1,
+      p: "Cheap early, ruinous late. That asymmetry is the whole argument for building under-specified from the bottom and earning the complexity last." }
+  };
+
+  function finish(kind) {
+    if (S.ended) return;
+    S.ended = true;
+    S.outcome = kind;
+    S.projecting = S.dispersed;
+    S.projClock = 0;
+    var v = VERDICTS[kind];
+    $("verdict").style.setProperty("--c", "var(--g" + v.g + ")");
+    $("verdict-v").textContent = v.t;
+    $("verdict-p").textContent = v.p;
+    note("season closed — " + v.t.toLowerCase(), kind === "dispersed" ? "hi" : "bad");
+    renderLedger();
+  }
+
+  /* ---------- fuel ceiling: a projection, not a guess about the machine ---------- */
+  var CEIL_NAME = [
+    "Grade 0 — no ascent",
+    "Grade 1 — sugar only",
+    "Grade 2 — flesh, no payload",
+    "Grade 3 — seed, no signal",
+    "Grade 4 — full ascent"
+  ];
+
+  function ceiling() {
+    var rem = Math.max(0, SEASON - S.day);
+    var eff = S.stability * (1 - 0.55 * S.stress);
+    if (S.surplus <= 0.02) {
+      return [0, "Surplus is at or below upkeep. Nothing above raw input can be built — the base is eating everything it catches."];
+    }
+    var growDays = Math.max(0, rem - Math.max(0, SET_DAY - S.day));
+    var projFlesh = Math.min(P.fleshMax, S.flesh + ctl.alloc * S.surplus * P.fleshEff * eff * growDays);
+    if (projFlesh < 1.0) {
+      return [1, "Sugar accrues, but the routed share never assembles a fruit worth an animal's attention. The currency exists; the package does not."];
+    }
+    var fbar = clamp((projFlesh * 0.7 - P.seedNeed) / (P.seedFull - P.seedNeed), 0, 1);
+    var seedSpeed = P.seedRate * fbar * eff;
+    var projSeed = S.seed + seedSpeed * rem;
+    if (projSeed < 1) {
+      return [2, "Flesh reaches a real size, but the payload inside will not finish before the season closes. Grade 3 stays locked: no finished seed, no ripening."];
+    }
+    var dSeed = S.seed >= 1 ? 0 : (1 - S.seed) / Math.max(1e-6, seedSpeed);
+    var ripeSpeed = P.ripenRate * clamp(S.surplus / 1.2, 0, 1.3) * eff;
+    var dRipe = (1 - S.ripe) / Math.max(1e-6, ripeSpeed);
+    if (dSeed + dRipe > rem) {
+      return [3, "The seed finishes, but the cascade that advertises it runs out of season. A finished payload in an unripe wrapper is not dispersable."];
+    }
+    return [4, "This fuel completes every conversion with time to spare, including the expensive ones near the top."];
+  }
+
+  /* ============================================================
+     RENDER
+     ============================================================ */
+  var stgEls = [], fillEls = [], valEls = [], convEls = [], rateEls = [];
+  for (var q0 = 0; q0 < 5; q0++) {
+    stgEls.push($("stg" + q0)); fillEls.push($("fill" + q0)); valEls.push($("val" + q0));
+    if (q0 < 4) { convEls.push($("cv" + q0)); rateEls.push($("r" + q0)); }
+  }
+
+  var logDirty = true;
+  function renderLog() {
+    if (!logDirty) return;
+    logDirty = false;
+    var h = "";
+    for (var i = 0; i < S.log.length; i++) {
+      var e = S.log[i];
+      h += '<div class="e ' + e.k + '"><span class="d">' + e.d + 'd</span><span>' + e.t + '</span></div>';
+    }
+    $("log").innerHTML = h;
+  }
+
+  function renderLedger() {
+    var seedKept = S.dispersed && S.seed >= 0.999;
+    var rows = [
+      ["Leaves", ctl.leaves + " units", "gone", "fall"],
+      ["Sugar", S.spent.toFixed(1) + " u spent", "gone", "spent"],
+      ["Fruit flesh", S.flesh.toFixed(2) + " g", "gone", S.dispersed ? "eaten" : (S.dropped ? "dropped" : "rots")],
+      ["The seed", Math.round(S.seed * 100) + "% formed", seedKept ? "kept" : "gone",
+        seedKept ? "carried" : (S.seed >= 0.999 ? "own shade" : "unfinished")]
+    ];
+    var h = "";
+    for (var i = 0; i < rows.length; i++) {
+      h += '<div class="li"><span class="n">' + rows[i][0] + '</span><span class="q">' + rows[i][1] +
+           '</span><span class="f ' + rows[i][2] + '">' + rows[i][3] + '</span></div>';
+    }
+    $("ledger").innerHTML = h;
+  }
+
+  function signed(x, n) { return (x < 0 ? "−" : "") + Math.abs(x).toFixed(n === undefined ? 2 : n); }
+
+  var ledgerTick = 0;
+  function draw() {
+    $("day").textContent = Math.floor(S.day);
+    $("clockfill").style.width = (S.day / SEASON * 100) + "%";
+    $("phase").textContent = S.ended ? "closed"
+      : S.day < SET_DAY ? "leaf · banking sugar"
+      : S.ripe > 0 ? "ripening cascade"
+      : S.seed > 0 ? "seed maturation"
+      : "fruit set · routing";
+
+    var levels = [
+      clamp(S.gross / 3.2, 0, 1),
+      clamp(S.sugar / 20, 0, 1),
+      clamp(S.flesh / P.fleshMax, 0, 1),
+      S.ripe,
+      S.seed
+    ];
+    for (var i = 0; i < 5; i++) fillEls[i].style.width = (levels[i] * 100) + "%";
+
+    valEls[0].textContent = S.gross.toFixed(2) + " /d";
+    valEls[1].textContent = S.sugar.toFixed(1) + " u";
+    valEls[2].textContent = S.flesh.toFixed(2) + " g";
+    valEls[3].textContent = Math.round(S.ripe * 100) + "%";
+    valEls[4].textContent = Math.round(S.seed * 100) + "%";
+
+    stgEls[2].dataset.live = (S.day >= SET_DAY && !S.dropped) ? "1" : "0";
+    stgEls[3].dataset.live = (S.seed >= 0.999 && !S.dropped) ? "1" : "0";
+    stgEls[4].dataset.live = (S.flesh > P.seedNeed && !S.dropped) ? "1" : "0";
+
+    $("gl2").textContent = S.dropped ? "abandoned"
+      : S.day < SET_DAY ? "not yet set"
+      : "sugar concentrated into a bribe";
+    $("gl3").textContent = S.ripe > 0.85 ? "red · soft · sweet · advertised"
+      : S.ripe > 0.3 ? "colouring · softening · acid falling"
+      : S.seed >= 0.999 ? "cascade starting"
+      : "green · hard · sour · unpayable";
+
+    var flowing = [S.gross > 0.01, S.flux[1] > 0.001, S.flux[2] > 1e-5, S.flux[3] > 1e-5];
+    for (var c = 0; c < 4; c++) convEls[c].dataset.flowing = flowing[c] ? "1" : "0";
+    rateEls[0].textContent = S.flux[0].toFixed(2) + " /d";
+    rateEls[1].textContent = S.flux[1].toFixed(2) + " /d";
+    rateEls[2].textContent = S.seed >= 0.999 ? (S.flux[2] * 100).toFixed(1) + " %/d" : "locked";
+    rateEls[3].textContent = (S.flux[3] * 100).toFixed(1) + " %/d";
+
+    $("basecount").textContent = ctl.leaves;
+    $("stab").textContent = S.stability.toFixed(2);
+
+    $("t-gross").textContent = S.grossMean.toFixed(2) + " /d";
+    $("t-shade").textContent = Math.round(S.shade * 100) + "%";
+    $("t-upkeep").textContent = "−" + S.upkeep.toFixed(2) + " /d";
+    var sp = $("t-surplus");
+    sp.textContent = signed(S.surplus) + " /d";
+    sp.className = "v " + (S.surplus <= 0.02 ? "bad" : S.surplus < 0.4 ? "warn" : "ok");
+    var st = $("t-stress");
+    st.textContent = Math.round(S.stress * 100) + "%";
+    st.className = "v " + (S.stress > 0.75 ? "bad" : S.stress > 0.4 ? "warn" : "");
+
+    var hasFruit = S.flesh > 0.02;
+    $("t-brix").textContent = hasFruit ? (5.5 + 9 * S.ripe + 3 * clamp(S.surplus / 2, 0, 1)).toFixed(1) + "° bx" : "—";
+    $("t-acid").textContent = hasFruit ? (0.95 - 0.60 * S.ripe).toFixed(2) + " g/100ml" : "—";
+    $("t-firm").textContent = hasFruit ? (22 - 13 * S.ripe).toFixed(1) + " lb" : "—";
+    var sg = $("t-signal");
+    sg.textContent = Math.round(S.signal * 100) + "%";
+    sg.className = "v " + (S.signal > 0.5 ? "ok" : "");
+
+    var cl = ceiling();
+    $("ceil").style.setProperty("--c", "var(--g" + cl[0] + ")");
+    $("ceil-v").textContent = CEIL_NAME[cl[0]];
+    $("ceil-why").textContent = cl[1];
+
+    $("sunk").textContent = S.sunk.toFixed(1) + " sunk";
+    $("b-drop").disabled = S.ended || S.dropped;
+
+    if (++ledgerTick % 20 === 0 && !S.ended) renderLedger();
+    renderLog();
+    drawBase();
+    drawSpark();
+    drawGround();
+  }
+
+  /* ---------- canvas helpers ---------- */
+  var colCache = {};
+  function css(v) {
+    if (colCache[v] === undefined) {
+      colCache[v] = getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+    }
+    return colCache[v];
+  }
+  function flushColors() { colCache = {}; }
+  var mq = window.matchMedia("(prefers-color-scheme: dark)");
+  if (mq.addEventListener) mq.addEventListener("change", flushColors);
+  else if (mq.addListener) mq.addListener(flushColors);
+  new MutationObserver(flushColors).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+  function fit(cv) {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var r = cv.getBoundingClientRect();
+    if (r.width < 2 || r.height < 2) return null;
+    var w = Math.round(r.width * dpr), h = Math.round(r.height * dpr);
+    if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+    var g = cv.getContext("2d");
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, r.width, r.height);
+    return { g: g, w: r.width, h: r.height };
+  }
+
+  var basePhase = 0;
+  function drawBase() {
+    var c = fit($("basefield")); if (!c) return;
+    var g = c.g, w = c.w, h = c.h;
+    var n = Math.min(160, Math.max(8, Math.round(ctl.leaves / 3.2)));
+    var gap = w / n;
+    var leaf = css("--leaf"), faint = css("--faint"), rule = css("--rule");
+    if (!reduce) basePhase += 0.055;
+    g.lineWidth = Math.max(1, Math.min(2.4, gap * 0.42));
+    for (var i = 0; i < n; i++) {
+      var x = gap * (i + 0.5);
+      // discipline high: identical, indistinguishable units. low: ragged and off-aim.
+      var wob = (1 - ctl.disc) * (Math.sin(basePhase * 1.3 + i * 2.7) * 0.5 + Math.sin(i * 5.1) * 0.5);
+      var len = clamp(h * (0.34 + 0.5 * ctl.light * (0.4 + 0.6 * ctl.water)) * (1 + wob * 0.85), 3, h - 2);
+      var onJob = i / n < ctl.disc;
+      g.strokeStyle = onJob ? leaf : faint;
+      g.globalAlpha = onJob ? 0.9 : 0.4;
+      g.beginPath();
+      g.moveTo(x, h - 1);
+      g.lineTo(x + wob * 5, h - 1 - len);
+      g.stroke();
+    }
+    g.globalAlpha = 1;
+    g.strokeStyle = rule;
+    g.lineWidth = 1;
+    g.beginPath(); g.moveTo(0, h - 0.5); g.lineTo(w, h - 0.5); g.stroke();
+  }
+
+  function drawSpark() {
+    var c = fit($("spark")); if (!c) return;
+    var g = c.g, w = c.w, h = c.h, pad = 6;
+    g.strokeStyle = css("--grid"); g.lineWidth = 1;
+    for (var k = 1; k < 4; k++) {
+      var gy = pad + (h - pad * 2) * k / 4;
+      g.beginPath(); g.moveTo(0, gy); g.lineTo(w, gy); g.stroke();
+    }
+    if (S.hist.length < 2) return;
+    var maxS = 0.6;
+    for (var i = 0; i < S.hist.length; i++) if (S.hist[i][1] > maxS) maxS = S.hist[i][1];
+    var series = [[1, css("--flow"), maxS, 1.7], [2, css("--g3-b"), 1, 1.3], [3, css("--g4-b"), 1, 1.3]];
+    for (var s = 0; s < series.length; s++) {
+      g.beginPath();
+      g.strokeStyle = series[s][1];
+      g.lineWidth = series[s][3];
+      for (var j = 0; j < S.hist.length; j++) {
+        var d = S.hist[j];
+        var x = (d[0] / SEASON) * w;
+        var y = h - pad - (h - pad * 2) * clamp(d[series[s][0]] / series[s][2], 0, 1);
+        if (j === 0) g.moveTo(x, y); else g.lineTo(x, y);
+      }
+      g.stroke();
+    }
+    g.strokeStyle = css("--rule-lit"); g.lineWidth = 1;
+    g.setLineDash([2, 3]);
+    g.beginPath(); g.moveTo(0, h - pad); g.lineTo(w, h - pad); g.stroke();
+    g.setLineDash([]);
+  }
+
+  var RAMP = ["--g0-b", "--g1-b", "--g2-b", "--g3-b", "--g4-b"];
+  function drawGround() {
+    var c = fit($("ground")); if (!c) return;
+    var g = c.g, w = c.w, h = c.h, cx = w / 2, cy = h / 2, i;
+    g.strokeStyle = css("--grid"); g.lineWidth = 1;
+    var stepPx = 34;
+    for (var x = (cx % stepPx); x < w; x += stepPx) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h); g.stroke(); }
+    for (var y = (cy % stepPx); y < h; y += stepPx) { g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); }
+
+    var maxr = 1;
+    for (i = 0; i < S.sites.length; i++) {
+      var r = Math.max(Math.abs(S.sites[i].x), Math.abs(S.sites[i].y) * 1.6);
+      if (r > maxr) maxr = r;
+    }
+    var scale = Math.min(1, (Math.min(w, h) / 2 - 16) / maxr);
+
+    var ramp = [css(RAMP[0]), css(RAMP[1]), css(RAMP[2]), css(RAMP[3]), css(RAMP[4])];
+    var flow = css("--flow");
+    var maxg = 0;
+    for (i = 0; i < S.sites.length; i++) {
+      var s = S.sites[i];
+      var px = cx + s.x * scale, py = cy + s.y * scale;
+      if (s.gen > maxg) maxg = s.gen;
+      if (s.gen === 0) {
+        g.strokeStyle = flow; g.lineWidth = 1.6;
+        g.beginPath(); g.arc(px, py, 8, 0, Math.PI * 2); g.stroke();
+        g.fillStyle = flow;
+        g.beginPath(); g.arc(px, py, 3.2, 0, Math.PI * 2); g.fill();
+      } else {
+        g.fillStyle = ramp[Math.min(4, s.gen)];
+        g.globalAlpha = clamp(0.4 + s.age * 0.45, 0.4, 0.95);
+        g.beginPath(); g.arc(px, py, 2.6 + Math.min(2.2, s.q * 2), 0, Math.PI * 2); g.fill();
+        g.globalAlpha = 1;
+      }
+    }
+    $("g-count").textContent = S.sites.length;
+    $("g-seasons").textContent = S.projSeasons;
+    $("g-gen").textContent = maxg;
+  }
+
+  /* ---------- flow particles over the stack ---------- */
+  var parts = [];
+  function lanes() {
+    var wrapEl = document.querySelector(".stackwrap");
+    if (!wrapEl) return null;
+    var base = wrapEl.getBoundingClientRect();
+    var out = [];
+    for (var i = 0; i < 4; i++) {
+      var a = stgEls[i].getBoundingClientRect();       // lower box on screen
+      var b = stgEls[i + 1].getBoundingClientRect();   // higher box on screen
+      out.push({
+        x0: a.left - base.left + a.width * 0.09,
+        x1: a.left - base.left + a.width * 0.60,
+        yStart: a.top - base.top,
+        yEnd: b.bottom - base.top
+      });
+    }
+    return out;
+  }
+
+  function drawParticles(dt) {
+    var c = fit($("particles")); if (!c || reduce) return;
+    var ln = lanes(); if (!ln) return;
+    var g = c.g;
+    var live = running && !S.ended;
+    var rate = live ? [
+      clamp(S.flux[0] / 2.5, 0, 1),
+      clamp(S.flux[1] / 0.8, 0, 1),
+      S.seed >= 0.999 ? clamp(S.flux[2] / 0.06, 0, 1) : 0,
+      clamp(S.flux[3] / 0.023, 0, 1)
+    ] : [0, 0, 0, 0];
+    for (var i = 0; i < 4; i++) {
+      if (Math.random() < rate[i] * 0.5 && parts.length < 240) {
+        var L2 = ln[i];
+        parts.push({ l: i, t: 0, x: L2.x0 + Math.random() * (L2.x1 - L2.x0), sp: 0.6 + Math.random() * 0.7, r: 1 + Math.random() * 1.4 });
+      }
+    }
+    var cols = [css("--g0-b"), css("--g1-b"), css("--g2-b"), css("--g3-b")];
+    for (var p = parts.length - 1; p >= 0; p--) {
+      var q = parts[p];
+      q.t += q.sp * dt;
+      if (q.t >= 1) { parts.splice(p, 1); continue; }
+      var l = ln[q.l];
+      var y = l.yStart + (l.yEnd - l.yStart) * q.t;
+      g.globalAlpha = Math.sin(q.t * Math.PI) * 0.85;
+      g.fillStyle = cols[q.l];
+      g.beginPath(); g.arc(q.x, y, q.r, 0, Math.PI * 2); g.fill();
+    }
+    g.globalAlpha = 1;
+  }
+
+  /* ---------- compounding projection ---------- */
+  function projectSeason() {
+    if (S.sites.length > 600 || S.projSeasons >= 7) { S.projecting = false; return; }
+    S.projSeasons++;
+    var born = [], i, j, m;
+    for (i = 0; i < S.sites.length; i++) {
+      var s = S.sites[i];
+      if (s.age < 1) { s.age = 1; continue; }
+      var k = 1.55 * S.seedQuality * s.q;
+      var n = Math.floor(k) + (Math.random() < (k % 1) ? 1 : 0);
+      for (j = 0; j < n; j++) {
+        var a = Math.random() * Math.PI * 2;
+        var d = 44 + Math.random() * 130;
+        var nx = s.x + Math.cos(a) * d, ny = s.y + Math.sin(a) * d * 0.6;
+        var ok = true;
+        for (m = 0; m < S.sites.length; m++) {
+          var dx = S.sites[m].x - nx, dy = (S.sites[m].y - ny) * 1.6;
+          if (dx * dx + dy * dy < 900) { ok = false; break; }
+        }
+        if (ok) born.push({ x: nx, y: ny, gen: s.gen + 1, q: clamp(s.q * (0.75 + Math.random() * 0.5), 0.15, 1), age: 0 });
+      }
+    }
+    for (i = 0; i < born.length; i++) S.sites.push(born[i]);
+  }
+
+  /* ============================================================
+     LOOP
+     ============================================================ */
+  var last = 0;
+  function frame(ts) {
+    if (!last) last = ts;
+    var real = Math.min(0.05, (ts - last) / 1000);
+    last = ts;
+
+    if (running && !S.ended) {
+      var days = real * 17 * speed;   // roughly 10.6 s per 180-day season at 1x
+      var sub = Math.max(1, Math.min(8, Math.ceil(days / 0.6)));
+      for (var i = 0; i < sub && !S.ended; i++) step(days / sub);
+    }
+    if (S.projecting) {
+      S.projClock += real;
+      if (S.projClock > 0.7) { S.projClock = 0; projectSeason(); }
+    }
+    draw();
+    drawParticles(real * (running && !S.ended ? speed * 0.9 : 0.3));
+    requestAnimationFrame(frame);
+  }
+
+  /* ============================================================
+     WIRING
+     ============================================================ */
+  var presetBtns = Array.prototype.slice.call(document.querySelectorAll("#presets button"));
+  function clearPreset() {
+    for (var i = 0; i < presetBtns.length; i++) presetBtns[i].setAttribute("aria-pressed", "false");
+  }
+
+  function bindSlider(id, key, fmt) {
+    var el = $("c-" + id), out = $("v-" + id);
+    el.addEventListener("input", function () {
+      ctl[key] = parseFloat(el.value);
+      out.textContent = fmt(ctl[key]);
+      clearPreset();
+    });
+    return function () { el.value = ctl[key]; out.textContent = fmt(ctl[key]); };
+  }
+  var syncers = [
+    bindSlider("light", "light", function (v) { return v.toFixed(2); }),
+    bindSlider("water", "water", function (v) { return v.toFixed(2); }),
+    bindSlider("leaves", "leaves", function (v) { return Math.round(v) + " units"; }),
+    bindSlider("disc", "disc", function (v) { return v.toFixed(2); }),
+    bindSlider("alloc", "alloc", function (v) { return v.toFixed(2); }),
+    bindSlider("traffic", "traffic", function (v) { return v.toFixed(2); })
+  ];
+  function syncAll() { for (var i = 0; i < syncers.length; i++) syncers[i](); }
+
+  presetBtns.forEach(function (b) {
+    b.addEventListener("click", function () {
+      var p = PRESETS[b.dataset.p];
+      for (var k in p) if (Object.prototype.hasOwnProperty.call(p, k)) ctl[k] = p[k];
+      syncAll();
+      clearPreset();
+      b.setAttribute("aria-pressed", "true");
+      restart();
+    });
+  });
+
+  var speedBtns = Array.prototype.slice.call(document.querySelectorAll(".speeds button"));
+  speedBtns.forEach(function (b) {
+    b.addEventListener("click", function () {
+      speed = parseFloat(b.dataset.s);
+      speedBtns.forEach(function (x) { x.setAttribute("aria-pressed", "false"); });
+      b.setAttribute("aria-pressed", "true");
+    });
+  });
+
+  $("b-run").addEventListener("click", function () {
+    running = !running;
+    this.textContent = running ? "Pause" : "Resume";
+  });
+  $("b-reset").addEventListener("click", restart);
+
+  $("b-drought").addEventListener("click", function () {
+    ctl.water = clamp(ctl.water * 0.45, 0.05, 1);
+    ctl.light = clamp(ctl.light * 0.88, 0.05, 1);
+    syncAll();
+    clearPreset();
+    note("drought — water cut to " + ctl.water.toFixed(2), "bad");
+  });
+
+  $("b-drop").addEventListener("click", function () {
+    if (S.ended || S.dropped) return;
+    S.dropped = true;
+    note("fruit dropped by hand — " + S.sunk.toFixed(1) + " units sunk", "bad");
+    finish("manual");
+  });
+
+  function restart() {
+    S = fresh();
+    parts.length = 0;
+    logDirty = true;
+    running = true;
+    $("b-run").textContent = "Pause";
+    $("verdict").style.setProperty("--c", "var(--g0)");
+    $("verdict-v").textContent = "Season running";
+    $("verdict-p").textContent = "Nothing is decided yet. The stack builds in order, and nothing in it can be skipped.";
+    note("season opened — " + ctl.leaves + " base units", "");
+    renderLedger();
+    draw();
+  }
+
+  window.addEventListener("resize", function () { parts.length = 0; });
+
+  S = fresh();
+  syncAll();
+  restart();
+  requestAnimationFrame(frame);
+})();
+</script>
+
+</body>
+</html>
